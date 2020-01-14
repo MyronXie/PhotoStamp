@@ -68,6 +68,10 @@
 /* #define USE_FULL_ASSERT    1U */
 
 /* USER CODE BEGIN Private defines */
+#define PI      3.14159265358979324
+#define AXIS    6378245.0
+#define OFFSET  0.00669342162296594323
+#define X_PI    PI*3000.0/180.0
 
 /* USER CODE END Private defines */
 
