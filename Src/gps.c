@@ -32,8 +32,8 @@ uint8_t GPS_MsgRecv(uint8_t ch)
             else            clearFlag = 1;
             break;
             
-        case 0x02:      //'P'/'A'
-            if(ch=='P'||ch=='N')    stage++;
+        case 0x02:      //'P'/'N'/'L'
+            if(ch=='P'||ch=='N'||ch=='L')    stage++;
             else            clearFlag = 1;
             break;
             
@@ -49,9 +49,6 @@ uint8_t GPS_MsgRecv(uint8_t ch)
             break;
         
         case 0x07:      //Checksum I
-            stage++;
-            break;
-        
         case 0x08:      //Checksum II
             stage++;
             break;
@@ -109,21 +106,19 @@ uint8_t GPS_Decode(char* buf, GPSMsgType* gpsm, uint8_t len)
     uint8_t result  = 0;
     uint8_t cnt     = 0;
     
-    if(buf[0]=='\r'&&buf[1]=='\n')  buf=buf+2;  // Skip '\r'(0x0D) and '\n'(0x0A)
+    //if(buf[0]=='\r'&&buf[1]=='\n')  buf=buf+2;  // Skip '\r'(0x0D) and '\n'(0x0A)
     
     uint16_t checksum = 0;
     
-    // Calculate CRC
-    for(checksum=buf[1],cnt=2;buf[cnt]!='*'&&cnt!=len;cnt++)
-        checksum ^= buf[cnt];
-    
     // Check CRC
-    //if(cnt==len)  return 0;
-    //if(checksum != HEX2OCT(buf[cnt+1])*16+HEX2OCT(buf[cnt+2]))  return 0;
+//    for(checksum=buf[1],cnt=2;buf[cnt]!='*'&&cnt!=len;cnt++)
+//        checksum ^= buf[cnt];
+//    if(cnt==len)  return 0;
+//    if(checksum != HEX2OCT(buf[cnt+1])*16+HEX2OCT(buf[cnt+2]))  return 0;
     
     if(!strncmp("$GNRMC",buf,6))
     {
-        printf("%s",buf);
+        //printf("[GPS]%s",buf);
 
         uint8_t t_mark = GetComma(buf,1);
         uint8_t d_mark = GetComma(buf,9);
@@ -143,7 +138,8 @@ uint8_t GPS_Decode(char* buf, GPSMsgType* gpsm, uint8_t len)
         uint8_t mode   = buf[GetComma(buf,12)];
         if(status=='A')
         {
-            LatLonType gpswgs,gpsgcj,gpsbd;
+            LatLonType gpswgs;
+            //LatLonType gpsgcj,gpsbd;
             gpswgs.lat = DMM2Degree(GetDoubleNumber(&buf[GetComma(buf,3)])/100);
             gpswgs.lon = DMM2Degree(GetDoubleNumber(&buf[GetComma(buf,5)])/100);
             if(buf[GetComma(buf,4)] == 'S') gpswgs.lat = -gpswgs.lat;
@@ -163,7 +159,7 @@ uint8_t GPS_Decode(char* buf, GPSMsgType* gpsm, uint8_t len)
     
     else if(!strncmp("$GNGGA",buf,6))
     {
-        printf("%s",buf);
+        //printf("[GPS]%s",buf);
         gpsm->height=GetDoubleNumber(&buf[GetComma(buf,9)]);
         result |= 0x02;
     }

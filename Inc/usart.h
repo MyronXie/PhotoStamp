@@ -66,6 +66,20 @@ extern UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN Private defines */
 
+#define BUFFSIZE    300
+
+typedef struct
+{
+    UART_HandleTypeDef* handle;
+    uint8_t buffer[BUFFSIZE];
+    uint16_t length;
+    uint8_t *front;
+    uint8_t *rear;
+    uint8_t flag;
+}
+SerialType;
+
+
 /* USER CODE END Private defines */
 
 extern void _Error_Handler(char *, int);
@@ -74,6 +88,10 @@ void MX_USART1_UART_Init(void);
 void MX_USART2_UART_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+
+uint8_t GPS_Buffer_Available(void);
+uint8_t GPS_Buffer_NextByte(void);
+void USART_Recv_Enable(void);
 
 /* USER CODE END Prototypes */
 

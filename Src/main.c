@@ -3,7 +3,7 @@
   * @file           : main.c
   * @brief          : Main program body
   ******************************************************************************
-  * @Version        : 1.0(191112)
+  * @Version        : 1.0(191118)
   * @Author         : Myron Xie
   ******************************************************************************
   */
@@ -48,10 +48,10 @@ uint64_t    gpsTick     = 0;
 /* ========== File ========== */
 FATFS       fs;                     // Work area (file system object) for logical drive
 FIL         fil;                    // file objects
-char        fileName[20]="default.txt";
+char        fileName[16]="default.txt";
 uint16_t    seqid = 1;
-uint32_t byteswritten;
-uint8_t fileOpened = 0;
+uint32_t    byteswritten;
+uint8_t     fileOpened = 0;
 
 /* ========== FLASH ========== */
 #define startAddr 0X08010000
@@ -60,8 +60,7 @@ uint32_t PageError = 0;
 uint16_t fileNum = 0;
 
 /* ========== USART ========== */
-uint8_t     aRxBuffer = 0, bRxBuffer = 0;
-uint8_t     rxFlag = 0;
+uint8_t     recvByte = 0;
 uint8_t     msgBuffer[80];
 char        writeBuf[80];
 
@@ -187,8 +186,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   
     //Enable USART1 & USART2
-    HAL_UART_Receive_IT(&huart1, &aRxBuffer, 1);
-    HAL_UART_Receive_IT(&huart2, &bRxBuffer, 1);
+    USART_Recv_Enable();
     
     //Read File Number from FLASH
 //    fileNum = *(__IO uint32_t*)(startAddr);
@@ -211,7 +209,7 @@ int main(void)
 //    
 //    fileNum = *(__IO uint32_t*)(startAddr+4);
     
-    printf("\r\n***** PhotoStamp v1.0(111912) ******\r\n");
+    printf("\r\n***** PhotoStamp v1.0(191118) ******\r\n");
     
     // File Process
     printf("\r\n  Mount ");
@@ -237,10 +235,11 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-    ledMode = LED_TWINKLE_SHORT;
+    ledMode = LED_TWINKLE_LONG;
 
     while(1)
     {
+        // Fatal error process: Turn off the LED & Exit the program
         if(errorCode)
         {
             printf("  FATAL ERROR: %d",errorCode);
@@ -248,6 +247,7 @@ int main(void)
             return 0;
         }
         
+        // Create Files when date and time are available
         if(!fileOpened)
         {
             if(gpsStatus&0x01)
@@ -263,7 +263,6 @@ int main(void)
                 else
                 {   
                     printf(" success!\r\n");
-                    ledMode = LED_TWINKLE_LONG;
                     fileOpened = 1;
                 }
             }
@@ -386,11 +385,18 @@ int main(void)
         
         #ifdef FUNC_GPS
         /* ========== GPS ========== */
+        
+        if(GPS_Buffer_Available())
+        {
+            recvByte = GPS_Buffer_NextByte();
+            gpsAvlFlag = GPS_MsgRecv(recvByte);
+        }
+
         if(gpsAvlFlag)
         {
-            memset(msgBuffer,0,80);
             memcpy(msgBuffer,recvBuffer,gpsAvlFlag);
-            //printf("%s",msgBuffer);
+            *(msgBuffer+gpsAvlFlag)='\0';       // Make buffer more readable
+            printf("%s",msgBuffer);             // [DEBUG] Watch GPS message
             gpsStatus = GPS_Decode((char*)msgBuffer,&gpsMsg,gpsAvlFlag);
             gpsAvlFlag = 0;
         }
@@ -405,11 +411,15 @@ int main(void)
                     gpsTick = HAL_GetTick();
                     if(ledMode != LED_FLASH_DIM_WAIT) ledMode = LED_ALWAYS_ON;
                 }
+                else if(gpsStatus&0x01)
+                {
+                    ledMode = LED_TWINKLE_MID;
+                }
                 else
                 {
                     if(HAL_GetTick()-gpsTick>3000)  // GPS Lost
                     {
-                        ledMode = LED_TWINKLE_MID;
+                        ledMode = LED_TWINKLE_LONG;
                     }
                 }
             
@@ -462,7 +472,7 @@ int main(void)
 
         /* ========== LED ========== */
         
-        if(HAL_GetTick()%1000==0)   printf("\r\nLED_MODE: %x, %d, %d\r\n",ledMode,(int)gpsTick,HAL_GetTick());
+        if(HAL_GetTick()%1000==0)   printf("\r\n[SYS] %d: <LED>%x, <GPS>%d \r\n",HAL_GetTick()/1000,ledMode,(int)gpsTick);
         
         switch(ledMode)
         {            
@@ -613,31 +623,6 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-    if(huart->Instance == USART2)
-    {
-        //HAL_UART_Transmit(&huart1, &aRxBuffer, 1, 1); // [DEBUG] test gps recv message
-        
-        gpsAvlFlag = GPS_MsgRecv(aRxBuffer);
-//        if(gpsAvlFlag)
-//        {
-//            memset(msgBuffer,0,80);
-//            memcpy(msgBuffer,recvBuffer,gpsAvlFlag);
-//        }
-        HAL_UART_Receive_IT(&huart2, &aRxBuffer, 1);
-    }
-    
-    if(huart->Instance == USART1)
-    {
-        HAL_UART_Transmit(&huart1, &bRxBuffer, 1, 1);
-        HAL_UART_Receive_IT(&huart1, &bRxBuffer, 1);
-        if(bRxBuffer=='!')
-        {
-            if(testFlag == 0)   testFlag = 1;
-        }
-    }
-}
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {

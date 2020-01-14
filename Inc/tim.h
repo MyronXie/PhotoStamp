@@ -74,9 +74,9 @@ extern void _Error_Handler(char *, int);
 void MX_TIM1_Init(void);
 void MX_TIM3_Init(void);
 void MX_TIM4_Init(void);
-                    
+
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-                                
+
 
 /* USER CODE BEGIN Prototypes */
 
