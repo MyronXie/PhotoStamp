@@ -3,7 +3,7 @@
   * @file           : main.c
   * @brief          : Main program body
   ******************************************************************************
-  * @Version        : 1.0(191118)
+  * @Version        : 1.2(191223)
   * @Author         : Myron Xie
   ******************************************************************************
   */
@@ -401,71 +401,21 @@ int main(void)
             gpsAvlFlag = 0;
         }
         
-        // Write gps msg
-        switch(gpsMode)
+        if(gpsStatus&0x10)
         {
-            // Waiting
-            case 0x00:
-                if(gpsStatus&0x10)
-                {
-                    gpsTick = HAL_GetTick();
-                    if(ledMode != LED_FLASH_DIM_WAIT) ledMode = LED_ALWAYS_ON;
-                }
-                else if(gpsStatus&0x01)
-                {
-                    ledMode = LED_TWINKLE_MID;
-                }
-                else
-                {
-                    if(HAL_GetTick()-gpsTick>3000)  // GPS Lost
-                    {
-                        ledMode = LED_TWINKLE_LONG;
-                    }
-                }
-            
-                if(HAL_GPIO_ReadPin(INPUT_CTRL_GPIO, INPUT_CTRL_PIN)==GPIO_PIN_RESET)
-                {
-                    gpsMode = 0x01;
-                    ledMode = LED_FLASH_DIM;
-                }
-                
-                if(testFlag == 1)
-                {
-                    gpsMode = 0x01;
-                    ledMode = LED_FLASH_DIM;
-                }
-                break;
-            
-            // Writing
-            case 0x01:
-                if(fileOpened)
-                {
-                    memset(writeBuf,0,100);
-                    sprintf(writeBuf,"%d,%04d%02d%02d,%02d%02d%02d,%.7f,%.7f,%.2f\r\n",seqid++,
-                    gpsMsg.year,gpsMsg.month,gpsMsg.day,gpsMsg.hour,gpsMsg.minute,gpsMsg.second,
-                    gpsMsg.latitude,gpsMsg.longitude,gpsMsg.height);
-                    retSD = f_write(&fil, writeBuf, sizeof(writeBuf), (void *)&byteswritten);
-                    retSD = f_sync(&fil);
-                    printf("%s",writeBuf);
-                }
-                gpsMode = 0x02;
-                break;
-            
-            case 0x02:
-                if(HAL_GPIO_ReadPin(INPUT_CTRL_GPIO, INPUT_CTRL_PIN)==GPIO_PIN_SET)
-                {
-                    gpsMode = 0x00;
-                }
-                if(testFlag == 1)
-                {
-                    gpsMode = 0x00;
-                    testFlag = 0;
-                }
-                break;
-            
-            default:
-                gpsMode = 0x00;
-                break;
+            gpsTick = HAL_GetTick();
+            if(ledMode != LED_FLASH_DIM_WAIT) ledMode = LED_ALWAYS_ON;
+        }
+        else if(gpsStatus&0x01)
+        {
+            ledMode = LED_TWINKLE_MID;
+        }
+        else
+        {
+            if(HAL_GetTick()-gpsTick>3000)  // GPS Lost
+            {
+                ledMode = LED_TWINKLE_LONG;
+            }
         }
 
         #endif /* FUNC_GPS */
@@ -654,6 +604,36 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
     }
 }
 
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    //get record signal, write gps msg into sdcard
+    if(GPIO_Pin == GPIO_PIN_3)
+    {
+        printf("!Triggered!");
+        if(!gpsMode)
+        {
+            gpsMode = 0x01;
+            ledMode = LED_FLASH_DIM;
+            if(fileOpened)
+            {
+                memset(writeBuf,0,100);
+                sprintf(writeBuf,"\r\n%d,%04d%02d%02d,%02d%02d%02d,%.7f,%.7f,%.2f",seqid++,
+                gpsMsg.year,gpsMsg.month,gpsMsg.day,gpsMsg.hour,gpsMsg.minute,gpsMsg.second,
+                gpsMsg.latitude,gpsMsg.longitude,gpsMsg.height);
+                retSD = f_write(&fil, writeBuf, sizeof(writeBuf), (void *)&byteswritten);
+                retSD = f_sync(&fil);
+                printf("%s",writeBuf);
+            }
+            gpsMode = 0x00;
+        }
+        else
+        {
+            printf("Too quick!");
+        }
+    }
+
+}
 
 /* USER CODE END 4 */
 
