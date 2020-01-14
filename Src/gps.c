@@ -78,6 +78,7 @@ void UTC2BTC(GPSMsgType* gps)
     }
 }
 
+//0x01: Get Time, 0x02: Get height, 0x10: Get LatLon
 uint8_t GPS_Decode(char* buf, GPSMsgType* gpsm, uint8_t len)
 {
     uint8_t tmp     = 0;
@@ -92,7 +93,7 @@ uint8_t GPS_Decode(char* buf, GPSMsgType* gpsm, uint8_t len)
     // Check CRC
     //if(checksum != HEX2OCT(buf[len-2])*16+HEX2OCT(buf[len-1]))  return 0;
     
-    if(buf[0]=='\r'&&buf[1]=='\n')  buf=buf+2;  // Skip 0x0D and 0x0A
+    if(buf[0]=='\r'&&buf[1]=='\n')  buf=buf+2;  // Skip '\r'(0x0D) and '\n'(0x0A)
     
     if(!strncmp("$GNRMC",buf,6))
     {
@@ -105,6 +106,7 @@ uint8_t GPS_Decode(char* buf, GPSMsgType* gpsm, uint8_t len)
         gpsm->month = (buf[tmp + 2] - '0') * 10 + (buf[tmp + 3] - '0');
         gpsm->year = (buf[tmp + 4] - '0') * 10 + (buf[tmp + 5] - '0') + 2000;
         UTC2BTC(gpsm);
+        result |= 0x01;
         
         status = buf[GetComma(buf,2)];
         if(status=='A')
@@ -118,7 +120,7 @@ uint8_t GPS_Decode(char* buf, GPSMsgType* gpsm, uint8_t len)
             //gpsbd = GCJ2BD(gpsgcj);
             gpsm->latitude = gpswgs.lat;
             gpsm->longitude = gpswgs.lon;
-            result = 0x01;
+            result |= 0x10;
         }
         else
         {
@@ -130,6 +132,7 @@ uint8_t GPS_Decode(char* buf, GPSMsgType* gpsm, uint8_t len)
     else if(!strncmp("$GNGGA",buf,6))
     {
         gpsm->height=GetDoubleNumber(&buf[GetComma(buf,9)]);
+        result |= 0x02;
     }
 
     return result;
