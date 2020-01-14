@@ -82,46 +82,43 @@ uint8_t GPS_Decode(char* buf, GPSMsgType* gpsm, uint8_t len)
 {
     uint8_t tmp     = 0;
     uint8_t status  = 0;
-    uint16_t checksum = buf[1];
-
+    uint8_t result  = 0;
+    //uint16_t checksum = buf[1];
+    
     // Calculate CRC
-    for(int cnt=2;cnt<len-3;cnt++)
-        checksum ^= buf[cnt];
+    //for(int cnt=2;cnt<len-3;cnt++)
+    //    checksum ^= buf[cnt];
     
     // Check CRC
-    if(checksum != HEX2OCT(buf[len-2])*16+HEX2OCT(buf[len-1]))  return 0;
+    //if(checksum != HEX2OCT(buf[len-2])*16+HEX2OCT(buf[len-1]))  return 0;
     
+    if(buf[0]=='\r'&&buf[1]=='\n')  buf=buf+2;  // Skip 0x0D and 0x0A
     
     if(!strncmp("$GNRMC",buf,6))
     {
-        status = buf[GetComma(buf,2)];
-
+        //printf("%s\r\n",buf);
         gpsm->hour = (buf[7] - '0') * 10 + (buf[8] - '0');
         gpsm->minute = (buf[9] - '0') * 10 + (buf[10] - '0');
         gpsm->second = (buf[11] - '0') * 10 + (buf[12] - '0');
-
         tmp = GetComma(buf,9);
         gpsm->day = (buf[tmp + 0] - '0') * 10 + (buf[tmp + 1] - '0');
         gpsm->month = (buf[tmp + 2] - '0') * 10 + (buf[tmp + 3] - '0');
         gpsm->year = (buf[tmp + 4] - '0') * 10 + (buf[tmp + 5] - '0') + 2000;
-        
         UTC2BTC(gpsm);
-
-        if(gpsm->year>2000&&gpsm->year<2099)
-            status |= 0x02;
         
+        status = buf[GetComma(buf,2)];
         if(status=='A')
         {
-            LatLonType gpswgs,gpsbd;
+            LatLonType gpswgs,gpsgcj,gpsbd;
             gpswgs.lat = DMM2Degree(GetDoubleNumber(&buf[GetComma(buf,3)])/100);
             gpswgs.lon = DMM2Degree(GetDoubleNumber(&buf[GetComma(buf,5)])/100);
             if(buf[GetComma(buf,4)] == 'S') gpswgs.lat = -gpswgs.lat;
             if(buf[GetComma(buf,6)] == 'W') gpswgs.lon = -gpswgs.lon;
-            gpsbd = WGS2BD(gpswgs);
-            gpsm->latitude = gpsbd.lat;
-            gpsm->longitude = gpsbd.lon;
-            
-            status |= 0x04;
+            //gpsgcj = WGS2GCJ(gpswgs);
+            //gpsbd = GCJ2BD(gpsgcj);
+            gpsm->latitude = gpswgs.lat;
+            gpsm->longitude = gpswgs.lon;
+            result = 0x01;
         }
         else
         {
@@ -135,7 +132,7 @@ uint8_t GPS_Decode(char* buf, GPSMsgType* gpsm, uint8_t len)
         gpsm->height=GetDoubleNumber(&buf[GetComma(buf,9)]);
     }
 
-    return status;
+    return result;
 }
 
 uint8_t GetComma(char* str,uint8_t num)
@@ -198,7 +195,7 @@ LatLonType GCJ2WGS(LatLonType gcjll)
 LatLonType GCJ2BD(LatLonType gcjll)
 {
     LatLonType bdll;
-    double x = gcjll.lat, y = gcjll.lon;  
+    double x = gcjll.lon, y = gcjll.lat;  
     double z = sqrt(x * x + y * y) + 0.00002 * sin(y * X_PI);  
     double theta = atan2(y, x) + 0.000003 * cos(x * X_PI);  
     bdll.lat = z * sin(theta) + 0.006;

@@ -31,59 +31,45 @@
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 
-/* ===== Steer [Unused] ===== */
-
-//#define STEER_TIME  600     //ms
-//#define STEER_M45   600     //800
-//#define STEER_0     803     //1020
-//#define STEER_P45   1008    //1245
-//#define TRIGGER_ON  1940
-//#define TRIGGER_OFF 1100
-
-//uint16_t steerPulse = 500;
-//TIM_OC_InitTypeDef sConfigOC4,sConfigOC3;
+//#define FUNC_CAM
+#define FUNC_GPS
 
 /* ========== GPS ========== */
 GPSMsgType  gpsMsg;
-uint8_t     gpsStatus=0x00;     // bit0: onboard  bit1: received  bit2: valid
-uint8_t     actFlag = 0;        // Whether the msg is going to be saved
-uint8_t     decodeFlag = 0;     // Whether the msg is decoded
+uint8_t     gpsStatus   = 0x00;     // bit0: onboard  bit1: received  bit2: valid
+uint8_t     gpsAvlFlag  = 0;        // Whether the msg is decoded
+uint8_t     gpsMode     = 0x00;
+uint64_t    gpsTick     = 0;
 
 /* ========== File ========== */
-FATFS fs;                 // Work area (file system object) for logical drive
-FIL fil;                  // file objects
-char fileName[20]="default.txt";
+FATFS   fs;                     // Work area (file system object) for logical drive
+FIL     fil;                    // file objects
+char    fileName[20]="default.txt";
 uint32_t byteswritten;
 
 /* ========== FLASH ========== */
 #define startAddr 0X08010000
-const uint16_t magicNum = 0x1016;
-FLASH_EraseInitTypeDef fl_erase;
+const uint16_t MAGICNUM = 0x1016;
 uint32_t PageError = 0;
-uint16_t fileNum=0;
+uint16_t fileNum = 0;
 
 
 uint16_t    seqid = 1;
 uint8_t     aRxBuffer = 0, bRxBuffer = 0;
 uint8_t     rxFlag = 0;
 uint8_t     msgBuffer[100];
-char        writeBuf[30];
-uint8_t     gpsLength = 0;
+char        writeBuf[100];
 
 
 /* ========== PWM ========== */
 volatile static uint32_t uwDiffCapture = 0;     // Positive pulse width of PWM
 
 
-/* ========== System ========== */
-uint8_t     sysMode     = 0x00;
-uint64_t    sysTick     = 0;
-uint64_t    lstGpsTick  = 0;
+/* ========== KEY ========== */
 uint8_t     keyState    = 1;
 
 
 /* ========== Camera ========== */
-
 #define CAM_OFF     0           // Camera running status
 #define CAM_ON      1
 #define CAM_TRIGGER 2000        // (us) Threshold of positive width of input PWM
@@ -101,9 +87,10 @@ typedef struct
     uint64_t        tick;
 }CamType;
 
-// For debug, just comment the camera you don't need, and change CAMNUM
+// For debug, just comment the camera(s) you don't need, and change CAMNUM
 #define CAMNUM 5
-CamType camera[CAMNUM] ={   {CAM_OFF,GPIOE,GPIO_PIN_0,GPIOE,GPIO_PIN_1,0,0,0},
+CamType camera[CAMNUM] ={
+                            {CAM_OFF,GPIOE,GPIO_PIN_0,GPIOE,GPIO_PIN_1,0,0,0},
                             {CAM_OFF,GPIOE,GPIO_PIN_6,GPIOE,GPIO_PIN_2,0,0,0},
                             {CAM_OFF,GPIOE,GPIO_PIN_5,GPIOE,GPIO_PIN_3,0,0,0},
                             {CAM_OFF,GPIOE,GPIO_PIN_4,GPIOB,GPIO_PIN_3,0,0,0},
@@ -120,8 +107,9 @@ uint16_t    maxTime = 0;
 #define LED_ON()    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
 #define LED_OFF()   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
 #define LED_TOG()   HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-uint8_t ledStatus   = 0;
-void LED_Control(uint8_t mode);
+uint8_t     ledMode   = 0x00 ;
+uint64_t    ledTick     = 0;
+
 
 /* USER CODE END PV */
 
@@ -176,23 +164,27 @@ int main(void)
 //  MX_TIM3_Init();
 //  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
+  
+    //Enable USART1 & USART2
     HAL_UART_Receive_IT(&huart1, &aRxBuffer, 1);
     HAL_UART_Receive_IT(&huart2, &bRxBuffer, 1);
     
-    //Read File number from FLASH
+    //Read File Number from FLASH
     fileNum = *(__IO uint32_t*)(startAddr);
-    if(fileNum == magicNum)   fileNum = *(__IO uint32_t*)(startAddr+4);
-        else fileNum = 0;
+    if(fileNum == MAGICNUM)
+        fileNum = *(__IO uint32_t*)(startAddr+4);
+    else fileNum = 0;   // Dummy magic word, clear cnt for file number
     fileNum++;
   
     HAL_FLASH_Unlock();
-    fl_erase.TypeErase=FLASH_TYPEERASE_SECTORS;
-    fl_erase.Sector=FLASH_SECTOR_4;
-    fl_erase.NbSectors=1;
-    fl_erase.VoltageRange=FLASH_VOLTAGE_RANGE_3;
+    FLASH_EraseInitTypeDef  fl_erase;
+    fl_erase.TypeErase      = FLASH_TYPEERASE_SECTORS;
+    fl_erase.Sector         = FLASH_SECTOR_4;
+    fl_erase.NbSectors      = 1;
+    fl_erase.VoltageRange   = FLASH_VOLTAGE_RANGE_3;
     
     HAL_FLASHEx_Erase(&fl_erase, &PageError);
-    HAL_FLASH_Program(TYPEPROGRAM_WORD, startAddr, (uint32_t)magicNum);
+    HAL_FLASH_Program(TYPEPROGRAM_WORD, startAddr, (uint32_t)MAGICNUM);
     HAL_FLASH_Program(TYPEPROGRAM_WORD, startAddr+4, (uint32_t)fileNum);
     HAL_FLASH_Lock();
     
@@ -235,8 +227,11 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
+    ledMode = 0x01;
+
     while(1)
     {
+        #ifdef FUNC_CAM
         /* ========== Camera state machine ========== */
         switch(camMode)
         {
@@ -303,17 +298,17 @@ int main(void)
                 retSD = f_write(&fil, writeBuf, sizeof(writeBuf), (void *)&byteswritten);
                 retSD = f_sync(&fil);
                 printf("%s",writeBuf);
-//                maxTime = 0;
-//                for(int i=0; i<CAMNUM; i++)
-//                {
-//                    printf("%3d,",camera[i].time);
-//                    if(camera[i].time > maxTime)    maxTime = camera[i].time;
-//                }
-//                printf("\r\n");
-//                for(int i=0; i<CAMNUM; i++)
-//                {
-//                    camera[i].delay = maxTime - camera[i].time;
-//                }
+                maxTime = 0;
+                for(int i=0; i<CAMNUM; i++)
+                {
+                    printf("%3d,",camera[i].time);
+                    if(camera[i].time > maxTime)    maxTime = camera[i].time;
+                }
+                printf("\r\n");
+                for(int i=0; i<CAMNUM; i++)
+                {
+                    camera[i].delay = maxTime - camera[i].time;
+                }
                 camMode = 0x04;
                 break;
 
@@ -337,62 +332,120 @@ int main(void)
                 camMode = 0x00;
                 break;        
         }
-
         
-//        /* ========== GPS ========== */
-//        if(decodeFlag)
-//        {
-//            //printf("\r\n%s",msgBuffer);
-//            gpsStatus = GPS_Decode((char*)msgBuffer,gpsMsg,decodeFlag);
-//            decodeFlag=0;
-//            lstGpsTick = HAL_GetTick();
-//            if(!(gpsStatus&0x01))
-//            {
-//                printf("\r\n GPS onboard!");
-//                gpsStatus |= 0x01;
-//            }
-//        }
-//        if(gpsStatus&0x01)
-//        {
-//            if(HAL_GetTick()-lstGpsTick>2500)
-//            {
-//                printf("\r\n GPS lost!");
-//                gpsStatus &= ~0x01;
-//            }
-//        }
-
-//        // Write gps msg
-//        if(actFlag)
-//        {
-//            memset(writeBuf,0,100);
-//            sprintf(writeBuf,"\r\n%d,%04d%02d%02d,%02d%02d%02d,%.7f,%.7f,%.2f",seqid++,
-//                gpsMsg.year,gpsMsg.month,gpsMsg.day,gpsMsg.hour,gpsMsg.minute,gpsMsg.second,
-//                gpsMsg.latitude,gpsMsg.longitude,gpsMsg.height);
-//            retSD = f_write(&fil, writeBuf, sizeof(writeBuf), (void *)&byteswritten);
-//            retSD = f_sync(&fil);
-//            printf("%s",writeBuf);
-//            actFlag = 0;
-//        }
-
-//        /* ========== LED ========== */
-
-//        LED_Control(ledStatus);
+        #endif /* FUNC_CAM */
         
-//        /* ========== KEY ========== */
-//        if(keyState!=HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_15))
-//        {
-//            keyState = HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_15);
-//            
-//            if(keyState == GPIO_PIN_SET)
-//            {
-//                printf("\r\n Key reset.");
-//            }
-//            else if(keyState == GPIO_PIN_RESET)
-//            {
-//                printf("\r\n Key pressed.");
-//            }    
-//        }
-    
+        #ifdef FUNC_GPS
+        /* ========== GPS ========== */
+        if(gpsAvlFlag)
+        {
+            //printf("[%d]%s\r\n",gpsAvlFlag,msgBuffer);
+            gpsStatus = GPS_Decode((char*)msgBuffer,&gpsMsg,gpsAvlFlag);
+            gpsAvlFlag = 0;
+        }
+
+        // Write gps msg
+        switch(gpsMode)
+        {
+            // Waiting
+            case 0x00:
+                if(gpsStatus)
+                {
+                    gpsTick = HAL_GetTick();
+                    if(ledMode != 0x04) ledMode = 0x02;
+                }
+                else
+                {
+                    if(HAL_GetTick()-gpsTick>2500)
+                    {
+                        ledMode = 0x01;
+                    }
+                }
+            
+                if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15)==GPIO_PIN_RESET)
+                //if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_3)==GPIO_PIN_RESET)
+                {
+                    gpsMode = 0x01;
+                    ledMode = 0x03;
+                }
+                break;
+            
+            // Writing
+            case 0x01:
+                memset(writeBuf,0,100);
+                sprintf(writeBuf,"\r\n%d,%04d%02d%02d,%02d%02d%02d,%.7f,%.7f,%.2f",seqid++,
+                gpsMsg.year,gpsMsg.month,gpsMsg.day,gpsMsg.hour,gpsMsg.minute,gpsMsg.second,
+                gpsMsg.latitude,gpsMsg.longitude,gpsMsg.height);
+                retSD = f_write(&fil, writeBuf, sizeof(writeBuf), (void *)&byteswritten);
+                retSD = f_sync(&fil);
+                printf("%s",writeBuf);
+                gpsMode = 0x02;
+                break;
+            
+            case 0x02:
+                if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15)==GPIO_PIN_SET)
+                //if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_3)==GPIO_PIN_SET)
+                {
+                    gpsMode = 0x00;
+                }
+                break;
+            
+            default:
+                gpsMode = 0x00;
+                break;
+        }
+
+        #endif /* FUNC_GPS */
+
+        /* ========== LED ========== */
+        
+        switch(ledMode)
+        {
+            case 0x00:  LED_OFF();  break;
+            
+            case 0x01:
+                if(HAL_GetTick()-ledTick>1000)
+                {
+                    LED_TOG();
+                    ledTick = HAL_GetTick();
+                }
+                break;
+                
+            case 0x02:  LED_ON();   break;
+            
+            case 0x03:
+                LED_OFF();
+                ledTick = HAL_GetTick();
+                ledMode = 0x04;
+                break;
+            
+            case 0x04:
+                if(HAL_GetTick()-ledTick>200)
+                {
+                    ledMode = 0x02;
+                }
+                break;
+                
+            default:
+                ledMode = 0x02;
+                break;
+        }
+
+
+        /* ========== KEY ========== */
+        if(keyState!=HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_15))
+        {
+            keyState = HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_15);
+            
+            if(keyState == GPIO_PIN_SET)
+            {
+                //printf("\r\n Key reset.");
+            }
+            else if(keyState == GPIO_PIN_RESET)
+            {
+                //printf("\r\n Key pressed.");
+            }    
+        }
     
     }
   /* USER CODE END WHILE */
@@ -479,12 +532,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     {
         //HAL_UART_Transmit(&huart1, &aRxBuffer, 1, 1); // [DEBUG] test gps recv message
         
-        gpsLength = GPS_MsgRecv(aRxBuffer);
-        if(gpsLength)
+        gpsAvlFlag = GPS_MsgRecv(aRxBuffer);
+        if(gpsAvlFlag)
         {
             memset(msgBuffer,0,80);
-            memcpy(msgBuffer,recvBuffer,gpsLength);
-            decodeFlag = gpsLength;
+            memcpy(msgBuffer,recvBuffer,gpsAvlFlag);
         }
         HAL_UART_Receive_IT(&huart2, &aRxBuffer, 1);
     }
@@ -526,40 +578,6 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
     }
 }
 
-void LED_Control(uint8_t mode)
-{
-    static uint64_t lstTick = 0;
-    
-    switch(mode)
-    {
-        case 0x00:
-            LED_OFF();
-            break;
-        
-        case 0x01:
-            LED_ON();
-            break;
-        
-        case 0x02:
-            if(HAL_GetTick()-lstTick>500)
-            {
-                LED_TOG();
-                lstTick = HAL_GetTick();
-            }
-            break;
-            
-        case 0x03:
-            if(HAL_GetTick()-lstTick>1000)
-            {
-                LED_TOG();
-                lstTick = HAL_GetTick();
-            }
-            break;
-            
-        default:
-            break;
-    }
-}
 
 /* USER CODE END 4 */
 
