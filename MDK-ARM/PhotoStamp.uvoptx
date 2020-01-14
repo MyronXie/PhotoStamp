@@ -157,66 +157,50 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
-          <LineNumber>214</LineNumber>
+          <LineNumber>620</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134232316</Address>
+          <Address>134224068</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>../Src/usart.c</Filename>
+          <Filename>../Src/main.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\PhotoStamp\../Src/usart.c\214</Expression>
+          <Expression>\\PhotoStamp\../Src/main.c\620</Expression>
         </Bp>
         <Bp>
           <Number>1</Number>
           <Type>0</Type>
-          <LineNumber>212</LineNumber>
+          <LineNumber>3636</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134232308</Address>
+          <Address>134245526</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>../Src/usart.c</Filename>
+          <Filename>../Middlewares/Third_Party/FatFs/src/ff.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\PhotoStamp\../Src/usart.c\212</Expression>
+          <Expression>\\PhotoStamp\../Middlewares/Third_Party/FatFs/src/ff.c\3636</Expression>
         </Bp>
         <Bp>
           <Number>2</Number>
           <Type>0</Type>
-          <LineNumber>220</LineNumber>
+          <LineNumber>3711</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134232382</Address>
+          <Address>134245886</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>../Src/usart.c</Filename>
+          <Filename>../Middlewares/Third_Party/FatFs/src/ff.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\PhotoStamp\../Src/usart.c\220</Expression>
-        </Bp>
-        <Bp>
-          <Number>3</Number>
-          <Type>0</Type>
-          <LineNumber>222</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>134232390</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>1</BreakIfRCount>
-          <Filename>../Src/usart.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression>\\PhotoStamp\../Src/usart.c\222</Expression>
+          <Expression>\\PhotoStamp\../Middlewares/Third_Party/FatFs/src/ff.c\3711</Expression>
         </Bp>
       </Breakpoint>
       <WatchWindow1>
@@ -245,7 +229,25 @@
           <WinNumber>1</WinNumber>
           <ItemText>GPS_Rx</ItemText>
         </Ww>
+        <Ww>
+          <count>5</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>writeBuf</ItemText>
+        </Ww>
+        <Ww>
+          <count>6</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>fil</ItemText>
+        </Ww>
       </WatchWindow1>
+      <MemoryWindow1>
+        <Mm>
+          <WinNumber>1</WinNumber>
+          <SubType>3</SubType>
+          <ItemText>\\PhotoStamp\../Src/main.c\writeBuf</ItemText>
+          <AccSizeX>0</AccSizeX>
+        </Mm>
+      </MemoryWindow1>
       <Tracepoint>
         <THDelay>0</THDelay>
       </Tracepoint>

@@ -94,7 +94,7 @@ void MX_GPIO_Init(void)
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
     
-    HAL_NVIC_SetPriority(EXTI3_IRQn, 0 , 1);
+    HAL_NVIC_SetPriority(EXTI3_IRQn, 7 , 1);
     HAL_NVIC_EnableIRQ(EXTI3_IRQn);
 
 

@@ -3,7 +3,7 @@
   * @file           : main.c
   * @brief          : Main program body
   ******************************************************************************
-  * @Version        : 1.2(191223)
+  * @Version        : 1.2(200109)
   * @Author         : Myron Xie
   ******************************************************************************
   */
@@ -34,7 +34,7 @@
 //#define FUNC_CAM
 #define FUNC_GPS
 
-#define INPUT_CTRL_TEST
+//#define INPUT_CTRL_TEST
 
 uint8_t errorCode = 0x00;
 
@@ -52,6 +52,7 @@ char        fileName[16]="default.txt";
 uint16_t    seqid = 1;
 uint32_t    byteswritten;
 uint8_t     fileOpened = 0;
+uint32_t    fileTick = 0;
 
 /* ========== FLASH ========== */
 #define startAddr 0X08010000
@@ -610,21 +611,25 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     //get record signal, write gps msg into sdcard
     if(GPIO_Pin == GPIO_PIN_3)
     {
-        printf("!Triggered!");
+        //printf("!Triggered!");
         if(!gpsMode)
         {
             gpsMode = 0x01;
             ledMode = LED_FLASH_DIM;
-            if(fileOpened)
+            if(HAL_GetTick()-fileTick>100)   //file save guard time
             {
-                memset(writeBuf,0,100);
-                sprintf(writeBuf,"\r\n%d,%04d%02d%02d,%02d%02d%02d,%.7f,%.7f,%.2f",seqid++,
-                gpsMsg.year,gpsMsg.month,gpsMsg.day,gpsMsg.hour,gpsMsg.minute,gpsMsg.second,
-                gpsMsg.latitude,gpsMsg.longitude,gpsMsg.height);
-                retSD = f_write(&fil, writeBuf, sizeof(writeBuf), (void *)&byteswritten);
-                retSD = f_sync(&fil);
-                printf("%s",writeBuf);
+                if(fileOpened)
+                {
+                    memset(writeBuf,0,100);
+                    sprintf(writeBuf,"\r\n%d,%04d%02d%02d,%02d%02d%02d,%.7f,%.7f,%.2f",seqid++,
+                    gpsMsg.year,gpsMsg.month,gpsMsg.day,gpsMsg.hour,gpsMsg.minute,gpsMsg.second,
+                    gpsMsg.latitude,gpsMsg.longitude,gpsMsg.height);
+                    retSD = f_write(&fil, writeBuf, sizeof(writeBuf), (void *)&byteswritten);
+                    retSD = f_sync(&fil);
+                    printf("%s",writeBuf);
+                }
             }
+            fileTick = HAL_GetTick();
             gpsMode = 0x00;
         }
         else
