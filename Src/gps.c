@@ -1,3 +1,13 @@
+/**
+  ******************************************************************************
+  * @file           : gps.c
+  * @brief          : Driver for GPS
+  ******************************************************************************
+  * @Version        : 1.0(191112)
+  * @Author         : Myron Xie
+  ******************************************************************************
+  */
+
 #include "gps.h"
 
 uint8_t recvBuffer[100];
@@ -34,7 +44,8 @@ uint8_t GPS_MsgRecv(uint8_t ch)
             break;
             
         case 0x06:      //Data
-            if(ch=='*')     stage++;
+            if(!ISGPSMSG(ch))   clearFlag = 1;
+            if(ch=='*')         stage++;
             break;
         
         case 0x07:      //Checksum I
@@ -42,8 +53,21 @@ uint8_t GPS_MsgRecv(uint8_t ch)
             break;
         
         case 0x08:      //Checksum II
-            ret = cnt;
-            clearFlag = 1;
+            stage++;
+            break;
+        
+        case 0x09:      //'\r'(0x0d)
+            if(ch=='\r')    stage++;
+            else            clearFlag = 1;
+            break;
+        
+        case 0x0A:      //'\n'(0x0a)
+            if(ch=='\n')
+            {
+                ret = cnt;
+                clearFlag = 1;
+            }
+            else    clearFlag = 1;
             break;
     }
     
@@ -51,6 +75,7 @@ uint8_t GPS_MsgRecv(uint8_t ch)
     {
         stage = 0x00;
         cnt = 0;
+        clearFlag = 0;
     }
         
     return ret;
@@ -81,34 +106,41 @@ void UTC2BTC(GPSMsgType* gps)
 //0x01: Get Time, 0x02: Get height, 0x10: Get LatLon
 uint8_t GPS_Decode(char* buf, GPSMsgType* gpsm, uint8_t len)
 {
-    uint8_t tmp     = 0;
-    uint8_t status  = 0;
     uint8_t result  = 0;
-    //uint16_t checksum = buf[1];
-    
-    // Calculate CRC
-    //for(int cnt=2;cnt<len-3;cnt++)
-    //    checksum ^= buf[cnt];
-    
-    // Check CRC
-    //if(checksum != HEX2OCT(buf[len-2])*16+HEX2OCT(buf[len-1]))  return 0;
+    uint8_t cnt     = 0;
     
     if(buf[0]=='\r'&&buf[1]=='\n')  buf=buf+2;  // Skip '\r'(0x0D) and '\n'(0x0A)
     
+    uint16_t checksum = 0;
+    
+    // Calculate CRC
+    for(checksum=buf[1],cnt=2;buf[cnt]!='*'&&cnt!=len;cnt++)
+        checksum ^= buf[cnt];
+    
+    // Check CRC
+    //if(cnt==len)  return 0;
+    //if(checksum != HEX2OCT(buf[cnt+1])*16+HEX2OCT(buf[cnt+2]))  return 0;
+    
     if(!strncmp("$GNRMC",buf,6))
     {
-        //printf("%s\r\n",buf);
-        gpsm->hour = (buf[7] - '0') * 10 + (buf[8] - '0');
-        gpsm->minute = (buf[9] - '0') * 10 + (buf[10] - '0');
-        gpsm->second = (buf[11] - '0') * 10 + (buf[12] - '0');
-        tmp = GetComma(buf,9);
-        gpsm->day = (buf[tmp + 0] - '0') * 10 + (buf[tmp + 1] - '0');
-        gpsm->month = (buf[tmp + 2] - '0') * 10 + (buf[tmp + 3] - '0');
-        gpsm->year = (buf[tmp + 4] - '0') * 10 + (buf[tmp + 5] - '0') + 2000;
-        UTC2BTC(gpsm);
-        result |= 0x01;
+        printf("%s",buf);
+
+        uint8_t t_mark = GetComma(buf,1);
+        uint8_t d_mark = GetComma(buf,9);
+        if(buf[t_mark]!=','&&buf[d_mark]!=',') // Time and date are available
+        {
+            gpsm->hour      = (buf[t_mark + 0] - '0') * 10 + (buf[t_mark + 1] - '0');
+            gpsm->minute    = (buf[t_mark + 2] - '0') * 10 + (buf[t_mark + 3] - '0');
+            gpsm->second    = (buf[t_mark + 4] - '0') * 10 + (buf[t_mark + 5] - '0');
+            gpsm->day       = (buf[d_mark + 0] - '0') * 10 + (buf[d_mark + 1] - '0');
+            gpsm->month     = (buf[d_mark + 2] - '0') * 10 + (buf[d_mark + 3] - '0');
+            gpsm->year      = (buf[d_mark + 4] - '0') * 10 + (buf[d_mark + 5] - '0') + 2000;
+            UTC2BTC(gpsm);
+            result |= 0x01;
+        }
         
-        status = buf[GetComma(buf,2)];
+        uint8_t status = buf[GetComma(buf,2)];
+        uint8_t mode   = buf[GetComma(buf,12)];
         if(status=='A')
         {
             LatLonType gpswgs,gpsgcj,gpsbd;
@@ -131,6 +163,7 @@ uint8_t GPS_Decode(char* buf, GPSMsgType* gpsm, uint8_t len)
     
     else if(!strncmp("$GNGGA",buf,6))
     {
+        printf("%s",buf);
         gpsm->height=GetDoubleNumber(&buf[GetComma(buf,9)]);
         result |= 0x02;
     }

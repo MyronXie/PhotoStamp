@@ -26,6 +26,7 @@ typedef struct
 }LatLonType;
 
 #define HEX2OCT(x) (x<'0'?0:(x<='9'?x-'0':(x<'A'?0:(x<='F'?x-'A'+10:0))))
+#define ISGPSMSG(x)   ((x>='0'&&x<='9')||(x>='A'&&x<='Z')||(x=='$')||(x==',')||(x=='.')||(x=='*'))
 
 extern uint8_t recvBuffer[100];
 
