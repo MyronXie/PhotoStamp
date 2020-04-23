@@ -3,7 +3,7 @@
   * @file           : main.c
   * @brief          : Main program body
   ******************************************************************************
-  * @Version        : 1.2(200109)
+  * @Version        : 1.3(200323)
   * @Author         : Myron Xie
   ******************************************************************************
   */
@@ -33,8 +33,6 @@
 /* ===== FUNC SELECT ===== */
 //#define FUNC_CAM
 #define FUNC_GPS
-
-//#define INPUT_CTRL_TEST
 
 uint8_t errorCode = 0x00;
 
@@ -96,13 +94,13 @@ typedef struct
 
 // For debug, just comment the camera(s) you don't need, and change CAMNUM
 #define CAMNUM 5
-CamType camera[CAMNUM] ={
-                            {CAM_OFF,GPIOE,GPIO_PIN_0,GPIOE,GPIO_PIN_1,0,0,0},
-                            {CAM_OFF,GPIOE,GPIO_PIN_6,GPIOE,GPIO_PIN_2,0,0,0},
-                            {CAM_OFF,GPIOE,GPIO_PIN_5,GPIOE,GPIO_PIN_3,0,0,0},
-                            {CAM_OFF,GPIOE,GPIO_PIN_4,GPIOB,GPIO_PIN_3,0,0,0},
-                            {CAM_OFF,GPIOD,GPIO_PIN_7,GPIOD,GPIO_PIN_6,0,0,0},
-                        };
+CamType camera[CAMNUM] = {
+    {CAM_OFF,CAM1_OUT_GPIO,CAM1_OUT_PIN,CAM1_IN_GPIO,CAM1_IN_PIN,0,0,0},
+    {CAM_OFF,CAM2_OUT_GPIO,CAM2_OUT_PIN,CAM2_IN_GPIO,CAM2_IN_PIN,0,0,0},
+    {CAM_OFF,CAM3_OUT_GPIO,CAM3_OUT_PIN,CAM3_IN_GPIO,CAM3_IN_PIN,0,0,0},
+    {CAM_OFF,CAM4_OUT_GPIO,CAM4_OUT_PIN,CAM4_IN_GPIO,CAM4_IN_PIN,0,0,0},
+    {CAM_OFF,CAM5_OUT_GPIO,CAM5_OUT_PIN,CAM5_IN_GPIO,CAM5_IN_PIN,0,0,0},
+};
 
 uint8_t     camMode = 0x00;
 uint64_t    camTick = 0;
@@ -111,9 +109,10 @@ uint16_t    maxTime = 0;
 
 
 /* ========== LED ========== */
-#define LED_ON()    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
-#define LED_OFF()   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-#define LED_TOG()   HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+#define LED_ON()    HAL_GPIO_WritePin(LED_GPIO, LED_PIN, GPIO_PIN_RESET)
+#define LED_OFF()   HAL_GPIO_WritePin(LED_GPIO, LED_PIN, GPIO_PIN_SET)
+#define LED_TOG()   HAL_GPIO_TogglePin(LED_GPIO, LED_PIN)
+
 #define LED_ALWAYS_OFF      0x00
 #define LED_ALWAYS_ON       0x10
 #define LED_TWINKLE_LONG    0x20
@@ -121,16 +120,9 @@ uint16_t    maxTime = 0;
 #define LED_TWINKLE_MID     0x22
 #define LED_FLASH_DIM       0x30
 #define LED_FLASH_DIM_WAIT  0x31
-uint8_t     ledMode = 0x00 ;
+uint8_t     ledMode = 0x00;
 uint64_t    ledTick = 0;
 
-#ifdef INPUT_CTRL_TEST
-#define INPUT_CTRL_GPIO    GPIOA
-#define INPUT_CTRL_PIN     GPIO_PIN_15
-#else
-#define INPUT_CTRL_GPIO    GPIOC
-#define INPUT_CTRL_PIN     GPIO_PIN_3
-#endif
 
 /* USER CODE END PV */
 
@@ -616,7 +608,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
         {
             gpsMode = 0x01;
             ledMode = LED_FLASH_DIM;
-            if(HAL_GetTick()-fileTick>100)   //file save guard time
+            if(HAL_GetTick()-fileTick>500)   //file save guard time
             {
                 if(fileOpened)
                 {
