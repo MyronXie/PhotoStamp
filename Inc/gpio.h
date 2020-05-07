@@ -3,7 +3,7 @@
   * @file           : gpio.h
   * @brief          : Header for GPIO (EXTI)
   ******************************************************************************
-  * @Version        : 1.3(200324)
+  * @Version        : 1.4(200507)
   * @Author         : Myron Xie
   ******************************************************************************
   */
@@ -36,6 +36,9 @@
 #define CTRL_GPIO       GPIOC
 #define CTRL_PIN        GPIO_PIN_3
 #define CTRL_IRQn       EXTI3_IRQn
+
+#define TRIG_GPIO       GPIOE
+#define TRIG_PIN        GPIO_PIN_9
 
 #define CAM1_OUT_GPIO   GPIOE
 #define CAM1_OUT_PIN    GPIO_PIN_0
@@ -73,30 +76,33 @@
 #define CTRL_PIN        GPIO_PIN_3
 #define CTRL_IRQn       EXTI3_IRQn
 
+#define TRIG_GPIO       GPIOE
+#define TRIG_PIN        GPIO_PIN_9
+
 #define CAM1_OUT_GPIO   GPIOB
-#define CAM1_OUT_PIN    GPIO_PIN_10
-#define CAM1_IN_GPIO    GPIOE
-#define CAM1_IN_PIN     GPIO_PIN_15
+#define CAM1_OUT_PIN    GPIO_PIN_14
+#define CAM1_IN_GPIO    GPIOB
+#define CAM1_IN_PIN     GPIO_PIN_13
 
-#define CAM2_OUT_GPIO   GPIOE
-#define CAM2_OUT_PIN    GPIO_PIN_14
-#define CAM2_IN_GPIO    GPIOE
-#define CAM2_IN_PIN     GPIO_PIN_13
+#define CAM2_OUT_GPIO   GPIOB
+#define CAM2_OUT_PIN    GPIO_PIN_12
+#define CAM2_IN_GPIO    GPIOB
+#define CAM2_IN_PIN     GPIO_PIN_11
 
-#define CAM3_OUT_GPIO   GPIOE
-#define CAM3_OUT_PIN    GPIO_PIN_12
+#define CAM3_OUT_GPIO   GPIOB
+#define CAM3_OUT_PIN    GPIO_PIN_10
 #define CAM3_IN_GPIO    GPIOE
-#define CAM3_IN_PIN     GPIO_PIN_11
+#define CAM3_IN_PIN     GPIO_PIN_15
 
 #define CAM4_OUT_GPIO   GPIOE
-#define CAM4_OUT_PIN    GPIO_PIN_10
+#define CAM4_OUT_PIN    GPIO_PIN_14
 #define CAM4_IN_GPIO    GPIOE
-#define CAM4_IN_PIN     GPIO_PIN_9
+#define CAM4_IN_PIN     GPIO_PIN_13
 
 #define CAM5_OUT_GPIO   GPIOE
-#define CAM5_OUT_PIN    GPIO_PIN_8
+#define CAM5_OUT_PIN    GPIO_PIN_13
 #define CAM5_IN_GPIO    GPIOE
-#define CAM5_IN_PIN     GPIO_PIN_7
+#define CAM5_IN_PIN     GPIO_PIN_12
 #endif
 
 /* USER CODE END Private defines */

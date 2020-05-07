@@ -3,14 +3,14 @@
   * @file           : gps.c
   * @brief          : Driver for GPS
   ******************************************************************************
-  * @Version        : 1.0(191112)
+  * @Version        : 1.4(200507)
   * @Author         : Myron Xie
   ******************************************************************************
   */
 
 #include "gps.h"
 
-uint8_t recvBuffer[100];
+uint8_t recvBuf[100];
 
 //0: no data available, others: data available
 uint8_t GPS_MsgRecv(uint8_t ch)
@@ -19,7 +19,7 @@ uint8_t GPS_MsgRecv(uint8_t ch)
     static uint8_t cnt = 0;
     uint8_t ret = 0, clearFlag = 0;
     
-    recvBuffer[cnt++]=ch;
+    recvBuf[cnt++]=ch;
     
     switch(stage)
     {
@@ -59,12 +59,8 @@ uint8_t GPS_MsgRecv(uint8_t ch)
             break;
         
         case 0x0A:      //'\n'(0x0a)
-            if(ch=='\n')
-            {
-                ret = cnt;
-                clearFlag = 1;
-            }
-            else    clearFlag = 1;
+            if(ch=='\n')     ret = cnt;
+            clearFlag = 1;
             break;
     }
     
@@ -78,11 +74,11 @@ uint8_t GPS_MsgRecv(uint8_t ch)
     return ret;
 }
 
-void UTC2BTC(GPSMsgType* gps)
+void UTC2BJT(GPSMsgType* gps)
 {
     #define isLeap(year) (((year%4==0&&year/100!=0)||(year%400==0)))
     static int day_list[2][12]={{31,28,31,30,31,30,31,31,30,31,30,31},{31,29,31,30,31,30,31,31,30,31,30,31}};
-    gps->hour += 8;
+    gps->hour += 8;     // Beijing Time: UTC+8
     if(gps->hour > 23)
     {
         gps->hour -= 24;
@@ -105,9 +101,6 @@ uint8_t GPS_Decode(char* buf, GPSMsgType* gpsm, uint8_t len)
 {
     uint8_t result  = 0;
     uint8_t cnt     = 0;
-    
-    //if(buf[0]=='\r'&&buf[1]=='\n')  buf=buf+2;  // Skip '\r'(0x0D) and '\n'(0x0A)
-    
     uint16_t checksum = 0;
     
     // Check CRC
@@ -116,9 +109,11 @@ uint8_t GPS_Decode(char* buf, GPSMsgType* gpsm, uint8_t len)
 //    if(cnt==len)  return 0;
 //    if(checksum != HEX2OCT(buf[cnt+1])*16+HEX2OCT(buf[cnt+2]))  return 0;
     
-    if(!strncmp("$GNRMC",buf,6))
+    printf("[GPS] %s",buf);   // [DEBUG] Watch GPS message
+
+    if((!strncmp("$GNRMC",buf,6))||(!strncmp("$GPRMC",buf,6)))
     {
-        //printf("[GPS]%s",buf);
+        //printf("[GPS] %s",buf);
 
         uint8_t t_mark = GetComma(buf,1);
         uint8_t d_mark = GetComma(buf,9);
@@ -130,7 +125,7 @@ uint8_t GPS_Decode(char* buf, GPSMsgType* gpsm, uint8_t len)
             gpsm->day       = (buf[d_mark + 0] - '0') * 10 + (buf[d_mark + 1] - '0');
             gpsm->month     = (buf[d_mark + 2] - '0') * 10 + (buf[d_mark + 3] - '0');
             gpsm->year      = (buf[d_mark + 4] - '0') * 10 + (buf[d_mark + 5] - '0') + 2000;
-            UTC2BTC(gpsm);
+            UTC2BJT(gpsm);
             result |= 0x01;
         }
         
@@ -139,11 +134,11 @@ uint8_t GPS_Decode(char* buf, GPSMsgType* gpsm, uint8_t len)
         if(status=='A')
         {
             LatLonType gpswgs;
-            //LatLonType gpsgcj,gpsbd;
             gpswgs.lat = DMM2Degree(GetDoubleNumber(&buf[GetComma(buf,3)])/100);
             gpswgs.lon = DMM2Degree(GetDoubleNumber(&buf[GetComma(buf,5)])/100);
             if(buf[GetComma(buf,4)] == 'S') gpswgs.lat = -gpswgs.lat;
             if(buf[GetComma(buf,6)] == 'W') gpswgs.lon = -gpswgs.lon;
+            //LatLonType gpsgcj,gpsbd;
             //gpsgcj = WGS2GCJ(gpswgs);
             //gpsbd = GCJ2BD(gpsgcj);
             gpsm->latitude = gpswgs.lat;
@@ -157,9 +152,9 @@ uint8_t GPS_Decode(char* buf, GPSMsgType* gpsm, uint8_t len)
         }
     }
     
-    else if(!strncmp("$GNGGA",buf,6))
+    else if((!strncmp("$GNGGA",buf,6))||(!strncmp("$GPGGA",buf,6)))
     {
-        //printf("[GPS]%s",buf);
+        //printf("[GPS] %s",buf);
         gpsm->height=GetDoubleNumber(&buf[GetComma(buf,9)]);
         result |= 0x02;
     }

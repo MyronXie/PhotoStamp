@@ -1,3 +1,13 @@
+/**
+  ******************************************************************************
+  * @file           : gps.h
+  * @brief          : Driver for GPS
+  ******************************************************************************
+  * @Version        : 1.4(200507)
+  * @Author         : Myron Xie
+  ******************************************************************************
+  */
+
 #ifndef __GPS_H
 #define __GPS_H
 
@@ -25,17 +35,22 @@ typedef struct
     double  lon;
 }LatLonType;
 
-#define HEX2OCT(x) (x<'0'?0:(x<='9'?x-'0':(x<'A'?0:(x<='F'?x-'A'+10:0))))
-#define ISGPSMSG(x)   ((x>='0'&&x<='9')||(x>='A'&&x<='Z')||(x=='$')||(x==',')||(x=='.')||(x=='*'))
+#define PI      3.14159265358979324
+#define AXIS    6378245.0
+#define OFFSET  0.00669342162296594323
+#define X_PI    PI*3000.0/180.0
 
-extern uint8_t recvBuffer[100];
+#define HEX2OCT(x) (x<'0'?0:(x<='9'?x-'0':(x<'A'?0:(x<='F'?x-'A'+10:0))))
+#define ISGPSMSG(x)   ((x>='0'&&x<='9')||(x>='A'&&x<='Z')||(x=='$')||(x==',')||(x=='.')||(x=='*')||(x=='-'))
+
+extern uint8_t recvBuf[100];
 
 uint8_t GPS_MsgRecv(uint8_t ch);
 uint8_t GPS_Decode(char* buf, GPSMsgType* gpsm, uint8_t len);
 uint8_t GetComma(char* str,uint8_t num);
 double GetDoubleNumber(char *s);
 double DMM2Degree(double dmm);
-void UTC2BTC(GPSMsgType* gps);
+void UTC2BJT(GPSMsgType* gps);
 
 double transformLat(double x, double y);
 double transformLon(double x, double y);
@@ -48,8 +63,6 @@ LatLonType GCJ2BD(LatLonType gcjll);
 LatLonType BD2GCJ(LatLonType bdll);
 LatLonType WGS2BD(LatLonType wgsll);
 LatLonType BD2WGS(LatLonType bdll);
-
-
 
 #endif /*__GPS_H */
 
