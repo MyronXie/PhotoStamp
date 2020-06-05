@@ -109,11 +109,11 @@ uint8_t GPS_Decode(char* buf, GPSMsgType* gpsm, uint8_t len)
 //    if(cnt==len)  return 0;
 //    if(checksum != HEX2OCT(buf[cnt+1])*16+HEX2OCT(buf[cnt+2]))  return 0;
     
-    printf("[GPS] %s",buf);   // [DEBUG] Watch GPS message
+    //printf("[GPS] %s",buf);   // [DEBUG] Watch GPS message
 
     if((!strncmp("$GNRMC",buf,6))||(!strncmp("$GPRMC",buf,6)))
     {
-        //printf("[GPS] %s",buf);
+        printf("[GPS] %s",buf);
 
         uint8_t t_mark = GetComma(buf,1);
         uint8_t d_mark = GetComma(buf,9);
@@ -154,7 +154,7 @@ uint8_t GPS_Decode(char* buf, GPSMsgType* gpsm, uint8_t len)
     
     else if((!strncmp("$GNGGA",buf,6))||(!strncmp("$GPGGA",buf,6)))
     {
-        //printf("[GPS] %s",buf);
+        printf("[GPS] %s",buf);
         gpsm->height=GetDoubleNumber(&buf[GetComma(buf,9)]);
         result |= 0x02;
     }

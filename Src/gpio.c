@@ -47,7 +47,7 @@ void MX_GPIO_Init(void)
     /* KEY */
     GPIO_InitStruct.Pin = KEY_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
     HAL_GPIO_Init(KEY_GPIO, &GPIO_InitStruct);
 
     /* LED */
@@ -76,7 +76,7 @@ void MX_GPIO_Init(void)
 
     /* Camera Control Input */
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Pull = GPIO_PULLDOWN;//GPIO_PULLUP;
 
     GPIO_InitStruct.Pin = CAM1_IN_PIN;
     HAL_GPIO_Init(CAM1_IN_GPIO, &GPIO_InitStruct);

@@ -79,30 +79,30 @@
 #define TRIG_GPIO       GPIOE
 #define TRIG_PIN        GPIO_PIN_9
 
-#define CAM1_OUT_GPIO   GPIOB
-#define CAM1_OUT_PIN    GPIO_PIN_14
+#define CAM1_OUT_GPIO   GPIOD       //GPIOB
+#define CAM1_OUT_PIN    GPIO_PIN_8  //GPIO_PIN_14
 #define CAM1_IN_GPIO    GPIOB
 #define CAM1_IN_PIN     GPIO_PIN_13
 
-#define CAM2_OUT_GPIO   GPIOB
-#define CAM2_OUT_PIN    GPIO_PIN_12
+#define CAM2_OUT_GPIO   GPIOD       //GPIOB
+#define CAM2_OUT_PIN    GPIO_PIN_10 //GPIO_PIN_12
 #define CAM2_IN_GPIO    GPIOB
 #define CAM2_IN_PIN     GPIO_PIN_11
 
-#define CAM3_OUT_GPIO   GPIOB
-#define CAM3_OUT_PIN    GPIO_PIN_10
+#define CAM3_OUT_GPIO   GPIOD       //GPIOB
+#define CAM3_OUT_PIN    GPIO_PIN_12 //GPIO_PIN_10
 #define CAM3_IN_GPIO    GPIOE
 #define CAM3_IN_PIN     GPIO_PIN_15
 
-#define CAM4_OUT_GPIO   GPIOE
-#define CAM4_OUT_PIN    GPIO_PIN_14
+#define CAM4_OUT_GPIO   GPIOD       //GPIOB
+#define CAM4_OUT_PIN    GPIO_PIN_14  //GPIO_PIN_14
 #define CAM4_IN_GPIO    GPIOE
 #define CAM4_IN_PIN     GPIO_PIN_13
 
-#define CAM5_OUT_GPIO   GPIOE
-#define CAM5_OUT_PIN    GPIO_PIN_13
+#define CAM5_OUT_GPIO   GPIOC       //GPIOB
+#define CAM5_OUT_PIN    GPIO_PIN_6  //GPIO_PIN_12
 #define CAM5_IN_GPIO    GPIOE
-#define CAM5_IN_PIN     GPIO_PIN_12
+#define CAM5_IN_PIN     GPIO_PIN_11
 #endif
 
 /* USER CODE END Private defines */

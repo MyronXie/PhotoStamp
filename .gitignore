@@ -20,6 +20,7 @@
 RTE/
 Templates/
 Examples/
+.vscode/
 
 !*.uvprojx
 !*.h
