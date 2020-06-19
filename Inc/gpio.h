@@ -86,8 +86,8 @@
 
 #define CAM2_OUT_GPIO   GPIOD       //GPIOB
 #define CAM2_OUT_PIN    GPIO_PIN_10 //GPIO_PIN_12
-#define CAM2_IN_GPIO    GPIOB
-#define CAM2_IN_PIN     GPIO_PIN_11
+#define CAM2_IN_GPIO    GPIOB       //GPIOE
+#define CAM2_IN_PIN     GPIO_PIN_11 //GPIO_PIN_7
 
 #define CAM3_OUT_GPIO   GPIOD       //GPIOB
 #define CAM3_OUT_PIN    GPIO_PIN_12 //GPIO_PIN_10

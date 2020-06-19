@@ -213,6 +213,15 @@ int main(void)
             printf("  Mode: 0x%02x\r\n",sysMode);
         }
         
+//        if(HAL_GetTick()%2==0)
+//        {
+//            for(int i=0;i<5;i++)
+//            {
+//                if(HAL_GPIO_ReadPin(camera[i].input_base, camera[i].input_pin)==GPIO_PIN_RESET)
+//                printf("CAM_IN:%d,0;\r\n",i);
+//            }
+//        }
+        
         switch(sysMode)
         {
             
@@ -336,7 +345,7 @@ int main(void)
                         camCnt++;
                         continue;
                     }
-                    else if(HAL_GPIO_ReadPin(camera[i].input_base, camera[i].input_pin)==GPIO_PIN_SET)
+                    else if(HAL_GPIO_ReadPin(camera[i].input_base, camera[i].input_pin)==GPIO_PIN_RESET)
                     {
                         camera[i].status = CAM_OFF;
                         camera[i].fb = 1;

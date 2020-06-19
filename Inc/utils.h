@@ -33,7 +33,7 @@
 #define     CAM_START_TIME_B    3000    // (ms) time between activate all cameras and re-activate 1st camera
 #define     CAM_START_TIME_C    1500    // (ms) time between re-activate each camera
 #define     CAM_TRIGGED_TIME    100     // (ms) time for low-level signal to activate camera
-#define     CAM_TIMEOUT         100     // (ms) Timeout for camera // due to feedback issue, this value ignored (1500 original)
+#define     CAM_TIMEOUT         1000    // (ms) Timeout for camera // due to feedback issue, this value ignored (1500 original)
 /* ========== ========== ========== ========== ========== */
 
 /* System */
