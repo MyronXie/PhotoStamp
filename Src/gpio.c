@@ -3,7 +3,7 @@
   * @file           : gpio.c
   * @brief          : Driver for GPIO (EXTI)
   ******************************************************************************
-  * @Version        : 1.3(200324)
+  * @Version        : 2.0-beta3(201009)
   * @Author         : Myron Xie
   ******************************************************************************
   */
@@ -51,12 +51,16 @@ void MX_GPIO_Init(void)
     HAL_GPIO_Init(KEY_GPIO, &GPIO_InitStruct);
 
     /* LED */
-    GPIO_InitStruct.Pin = LED_PIN;
+    GPIO_InitStruct.Pin = BOARD_LED_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(LED_GPIO, &GPIO_InitStruct);
-    HAL_GPIO_WritePin(LED_GPIO, LED_PIN, GPIO_PIN_SET);
+    HAL_GPIO_Init(BOARD_LED_GPIO, &GPIO_InitStruct);
+    HAL_GPIO_WritePin(BOARD_LED_GPIO, BOARD_LED_PIN, GPIO_PIN_SET);
+    
+    GPIO_InitStruct.Pin = EXT_LED_PIN;
+    HAL_GPIO_Init(EXT_LED_GPIO, &GPIO_InitStruct);
+    HAL_GPIO_WritePin(EXT_LED_GPIO, EXT_LED_PIN, GPIO_PIN_RESET);
 
     /* Camera Control Output */
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -88,6 +92,28 @@ void MX_GPIO_Init(void)
     HAL_GPIO_Init(CAM4_IN_GPIO, &GPIO_InitStruct);
     GPIO_InitStruct.Pin = CAM5_IN_PIN;
     HAL_GPIO_Init(CAM5_IN_GPIO, &GPIO_InitStruct);
+    
+    /* Camera Status LED */
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+
+    GPIO_InitStruct.Pin = CAM1_LED_PIN;
+    HAL_GPIO_Init(CAM1_LED_GPIO, &GPIO_InitStruct);
+    GPIO_InitStruct.Pin = CAM2_LED_PIN;
+    HAL_GPIO_Init(CAM2_LED_GPIO, &GPIO_InitStruct);
+    GPIO_InitStruct.Pin = CAM3_LED_PIN;
+    HAL_GPIO_Init(CAM3_LED_GPIO, &GPIO_InitStruct);
+    GPIO_InitStruct.Pin = CAM4_LED_PIN;
+    HAL_GPIO_Init(CAM4_LED_GPIO, &GPIO_InitStruct);
+    GPIO_InitStruct.Pin = CAM5_LED_PIN;
+    HAL_GPIO_Init(CAM5_LED_GPIO, &GPIO_InitStruct);
+    
+    HAL_GPIO_WritePin(CAM1_LED_GPIO, CAM1_LED_PIN, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(CAM2_LED_GPIO, CAM2_LED_PIN, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(CAM3_LED_GPIO, CAM3_LED_PIN, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(CAM4_LED_GPIO, CAM4_LED_PIN, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(CAM5_LED_GPIO, CAM5_LED_PIN, GPIO_PIN_SET);
 
     /* Camera Control Input for record GPS msg */
     GPIO_InitStruct.Pin = CTRL_PIN;

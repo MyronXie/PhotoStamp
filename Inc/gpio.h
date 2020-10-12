@@ -3,7 +3,7 @@
   * @file           : gpio.h
   * @brief          : Header for GPIO (EXTI)
   ******************************************************************************
-  * @Version        : 1.4(200507)
+  * @Version        : 2.0-beta3(201009)
   * @Author         : Myron Xie
   ******************************************************************************
   */
@@ -66,8 +66,10 @@
 #define CAM5_IN_PIN     GPIO_PIN_6
 #endif
 #ifdef BOARD_v2
-#define LED_GPIO        GPIOA           //D2
-#define LED_PIN         GPIO_PIN_1
+#define BOARD_LED_GPIO  GPIOA           //D2
+#define BOARD_LED_PIN   GPIO_PIN_1
+#define EXT_LED_GPIO    GPIOE
+#define EXT_LED_PIN     GPIO_PIN_0
 
 #define KEY_GPIO        GPIOA           //K1
 #define KEY_PIN         GPIO_PIN_0
@@ -79,30 +81,41 @@
 #define TRIG_GPIO       GPIOE
 #define TRIG_PIN        GPIO_PIN_9
 
-#define CAM1_OUT_GPIO   GPIOD       //GPIOB
-#define CAM1_OUT_PIN    GPIO_PIN_8  //GPIO_PIN_14
+//backup:PB14,PB12,PB10,PE14,PE12
+#define CAM1_OUT_GPIO   GPIOD
+#define CAM1_OUT_PIN    GPIO_PIN_8
 #define CAM1_IN_GPIO    GPIOB
 #define CAM1_IN_PIN     GPIO_PIN_13
+#define CAM1_LED_GPIO   GPIOB
+#define CAM1_LED_PIN    GPIO_PIN_7
 
-#define CAM2_OUT_GPIO   GPIOD       //GPIOB
-#define CAM2_OUT_PIN    GPIO_PIN_10 //GPIO_PIN_12
-#define CAM2_IN_GPIO    GPIOB       //GPIOE
-#define CAM2_IN_PIN     GPIO_PIN_11 //GPIO_PIN_7
+#define CAM2_OUT_GPIO   GPIOD
+#define CAM2_OUT_PIN    GPIO_PIN_10
+#define CAM2_IN_GPIO    GPIOE           //GPIOB (layout changed)
+#define CAM2_IN_PIN     GPIO_PIN_7      //GPIO_PIN_11
+#define CAM2_LED_GPIO   GPIOB
+#define CAM2_LED_PIN    GPIO_PIN_6
 
-#define CAM3_OUT_GPIO   GPIOD       //GPIOB
-#define CAM3_OUT_PIN    GPIO_PIN_12 //GPIO_PIN_10
+#define CAM3_OUT_GPIO   GPIOD
+#define CAM3_OUT_PIN    GPIO_PIN_12
 #define CAM3_IN_GPIO    GPIOE
 #define CAM3_IN_PIN     GPIO_PIN_15
+#define CAM3_LED_GPIO   GPIOB
+#define CAM3_LED_PIN    GPIO_PIN_9
 
-#define CAM4_OUT_GPIO   GPIOD       //GPIOB
-#define CAM4_OUT_PIN    GPIO_PIN_14  //GPIO_PIN_14
+#define CAM4_OUT_GPIO   GPIOD
+#define CAM4_OUT_PIN    GPIO_PIN_14
 #define CAM4_IN_GPIO    GPIOE
 #define CAM4_IN_PIN     GPIO_PIN_13
+#define CAM4_LED_GPIO   GPIOB
+#define CAM4_LED_PIN    GPIO_PIN_8
 
-#define CAM5_OUT_GPIO   GPIOC       //GPIOB
-#define CAM5_OUT_PIN    GPIO_PIN_6  //GPIO_PIN_12
+#define CAM5_OUT_GPIO   GPIOC
+#define CAM5_OUT_PIN    GPIO_PIN_6
 #define CAM5_IN_GPIO    GPIOE
 #define CAM5_IN_PIN     GPIO_PIN_11
+#define CAM5_LED_GPIO   GPIOE
+#define CAM5_LED_PIN    GPIO_PIN_1
 #endif
 
 /* USER CODE END Private defines */

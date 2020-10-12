@@ -3,7 +3,7 @@
   * @file           : main.c
   * @brief          : Main program body
   ******************************************************************************
-  * @version        : 2.0-beta(200605)
+  * @version        : 2.0-beta3(201009)
   * @author         : Myron Xie
   ******************************************************************************
   */
@@ -67,11 +67,11 @@ uint64_t    trigTick = 0;
 // For debug, just comment the camera(s) you don't need, and change CAMNUM
 #define CAMNUM 5
 CamType camera[CAMNUM] = {
-    {CAM_OFF,CAM1_OUT_GPIO,CAM1_OUT_PIN,CAM1_IN_GPIO,CAM1_IN_PIN,0},
-    {CAM_OFF,CAM2_OUT_GPIO,CAM2_OUT_PIN,CAM2_IN_GPIO,CAM2_IN_PIN,0},
-    {CAM_OFF,CAM3_OUT_GPIO,CAM3_OUT_PIN,CAM3_IN_GPIO,CAM3_IN_PIN,0},
-    {CAM_OFF,CAM4_OUT_GPIO,CAM4_OUT_PIN,CAM4_IN_GPIO,CAM4_IN_PIN,0},
-    {CAM_OFF,CAM5_OUT_GPIO,CAM5_OUT_PIN,CAM5_IN_GPIO,CAM5_IN_PIN,0},
+    {CAM1_OUT_GPIO,CAM1_OUT_PIN,CAM1_IN_GPIO,CAM1_IN_PIN,CAM1_LED_GPIO,CAM1_LED_PIN,0,0,0,0},
+    {CAM2_OUT_GPIO,CAM2_OUT_PIN,CAM2_IN_GPIO,CAM2_IN_PIN,CAM2_LED_GPIO,CAM2_LED_PIN,0,0,0,0},
+    {CAM3_OUT_GPIO,CAM3_OUT_PIN,CAM3_IN_GPIO,CAM3_IN_PIN,CAM3_LED_GPIO,CAM3_LED_PIN,0,0,0,0},
+    {CAM4_OUT_GPIO,CAM4_OUT_PIN,CAM4_IN_GPIO,CAM4_IN_PIN,CAM4_LED_GPIO,CAM4_LED_PIN,0,0,0,0},
+    {CAM5_OUT_GPIO,CAM5_OUT_PIN,CAM5_IN_GPIO,CAM5_IN_PIN,CAM5_LED_GPIO,CAM5_LED_PIN,0,0,0,0},
 };
 
 uint64_t    camTick     = 0;
@@ -156,7 +156,7 @@ int main(void)
 
     for(int i=0; i<CAMNUM; i++)
     {
-        HAL_GPIO_WritePin(camera[i].output_base, camera[i].output_pin, GPIO_PIN_SET);
+        HAL_GPIO_WritePin(camera[i].output_gpio, camera[i].output_pin, GPIO_PIN_SET);
     }
 
     camTick = HAL_GetTick();
@@ -181,6 +181,7 @@ int main(void)
         {
             printf("  FATAL ERROR: %d",errorCode);
             LED_OFF();
+            HAL_GPIO_WritePin(EXT_LED_GPIO, EXT_LED_PIN, GPIO_PIN_RESET);
             return 0;
         }
         
@@ -210,7 +211,7 @@ int main(void)
         if(sysModeLst!=sysMode)
         {
             sysModeLst=sysMode;
-            printf("  Mode: 0x%02x\r\n",sysMode);
+            printf("[Debug] Mode: 0x%02x\r\n",sysMode);
         }
         
 //        if(HAL_GetTick()%2==0)
@@ -224,9 +225,6 @@ int main(void)
         
         switch(sysMode)
         {
-            
-            int cam_i;
-
             #ifdef FUNC_CAM
             // Camera Startup Process
             case 0x00:
@@ -234,7 +232,7 @@ int main(void)
                 {
                     for(int i=0; i<CAMNUM; i++)
                     {
-                        HAL_GPIO_WritePin(camera[i].output_base, camera[i].output_pin, GPIO_PIN_RESET);
+                        HAL_GPIO_WritePin(camera[i].output_gpio, camera[i].output_pin, GPIO_PIN_RESET);
                     }
 
                     camTick = HAL_GetTick();
@@ -247,7 +245,7 @@ int main(void)
                 {
                     for(int i=0; i<CAMNUM; i++)
                     {
-                        HAL_GPIO_WritePin(camera[i].output_base, camera[i].output_pin, GPIO_PIN_SET);
+                        HAL_GPIO_WritePin(camera[i].output_gpio, camera[i].output_pin, GPIO_PIN_SET);
                     }
 
                     camTick = HAL_GetTick();
@@ -259,7 +257,7 @@ int main(void)
                 if(HAL_GetTick()-camTick >= CAM_START_TIME_B-CAM_START_TIME_C)
                 {
                     camTick = HAL_GetTick();
-                    cam_i = 0;
+                    camCnt = 0;
                     sysMode = 0x11;
                 }
                 break;
@@ -267,7 +265,7 @@ int main(void)
             case 0x11:
                 if(HAL_GetTick()-camTick >= CAM_START_TIME_C)
                 {
-                    HAL_GPIO_WritePin(camera[cam_i].output_base, camera[cam_i].output_pin, GPIO_PIN_RESET);
+                    HAL_GPIO_WritePin(camera[camCnt].output_gpio, camera[camCnt].output_pin, GPIO_PIN_RESET);
                     camTick = HAL_GetTick();
                     sysMode = 0x12;
                 }
@@ -276,13 +274,30 @@ int main(void)
             case 0x12:
                 if(HAL_GetTick()-camTick >= CAM_TRIGGED_TIME)
                 {
-                    HAL_GPIO_WritePin(camera[cam_i].output_base, camera[cam_i].output_pin, GPIO_PIN_SET);
-                    cam_i++;
+                    HAL_GPIO_WritePin(camera[camCnt].output_gpio, camera[camCnt].output_pin, GPIO_PIN_SET);
+                    camCnt++;
                     camTick = HAL_GetTick();
                     sysMode = 0x11;
                 }
-                if(cam_i >= CAMNUM)
+                else
                 {
+                    if(!(camera[camCnt].fb))
+                    {
+                        if(HAL_GPIO_ReadPin(camera[camCnt].input_gpio, camera[camCnt].input_pin)==GPIO_PIN_RESET)
+                        {
+                            camera[camCnt].fb = 1;
+                            camera[camCnt].led = 1;
+                            camera[camCnt].led_tick = HAL_GetTick();
+                        }
+                    }
+                }
+                if(camCnt >= CAMNUM)
+                {
+                    printf("[Init] Feedback: %1d, %1d, %1d, %1d, %1d", camera[0].fb, camera[1].fb, camera[2].fb, camera[3].fb, camera[4].fb);
+                    for(int i=0;i<CAMNUM;i++)
+                    {
+                        camera[i].fb = 0;
+                    }
                     camTick = HAL_GetTick();
                     sysMode = 0x13;
                 }
@@ -320,8 +335,7 @@ int main(void)
                         #endif
                     }
                 }
-                if(sysMode!=0x21||sysMode!=0x30)   break;
-
+                if(sysMode!=0x21)   break;
 
             // Camera control signal [Output]
             case 0x21:
@@ -329,7 +343,7 @@ int main(void)
                 for(int i=0; i<CAMNUM; i++)
                 {
                     camera[i].status = CAM_ON;
-                    HAL_GPIO_WritePin(camera[i].output_base, camera[i].output_pin, GPIO_PIN_RESET);
+                    HAL_GPIO_WritePin(camera[i].output_gpio, camera[i].output_pin, GPIO_PIN_RESET);
                 }
                 camTick = HAL_GetTick();
                 sysMode = 0x22;
@@ -345,21 +359,24 @@ int main(void)
                         camCnt++;
                         continue;
                     }
-                    else if(HAL_GPIO_ReadPin(camera[i].input_base, camera[i].input_pin)==GPIO_PIN_RESET)
+                    else if(HAL_GPIO_ReadPin(camera[i].input_gpio, camera[i].input_pin)==GPIO_PIN_RESET)
                     {
                         camera[i].status = CAM_OFF;
                         camera[i].fb = 1;
-                        HAL_GPIO_WritePin(camera[i].output_base, camera[i].output_pin, GPIO_PIN_SET);
+                        camera[i].led = 1;
+                        camera[i].led_tick = HAL_GetTick();
+                        HAL_GPIO_WritePin(camera[i].output_gpio, camera[i].output_pin, GPIO_PIN_SET);
                     }
                     else if((HAL_GetTick()-camTick) >= CAM_TIMEOUT)
                     {
                         camera[i].status = CAM_OFF;
+                        camera[i].led = 0;
                         camera[i].fb = 0;       // timeout
-                        HAL_GPIO_WritePin(camera[i].output_base, camera[i].output_pin, GPIO_PIN_SET);
+                        HAL_GPIO_WritePin(camera[i].output_gpio, camera[i].output_pin, GPIO_PIN_SET);
                     }
                 }
 
-                if(camCnt >= CAMNUM)
+                if(camCnt >= CAMNUM)    // all camera off
                 {
                     sysMode = 0x30;
                 }
@@ -388,14 +405,13 @@ int main(void)
                     
                     while(fileBuf[size_char]!='\0'&&size_char<=70)  size_char++;
                     retSD = f_write(&fil, fileBuf, size_char, (void *)&fileBytes);
-                    //retSD = f_write(&fil, fileBuf, sizeof(fileBuf), (void *)&fileBytes);
                     retSD = f_sync(&fil);
                     printf("\r\n[MSG] %s",fileBuf);
                 }
                 else
                 {
-                    printf("%1d,%1d,%1d,%1d,%1d\r\n",camera[0].fb, camera[1].fb, camera[2].fb, camera[3].fb, camera[4].fb);
-                    //printf("[WARN] File not opened yet!");
+                    //File not opened yet
+                    printf("Feedback: %1d,%1d,%1d,%1d,%1d\r\n",camera[0].fb, camera[1].fb, camera[2].fb, camera[3].fb, camera[4].fb);
                 }
 
                 for(int i=0; i<CAMNUM; i++)
@@ -419,6 +435,7 @@ int main(void)
                 }
                 #endif
                 #ifdef TRIG_MODE_FALLING
+                trigFlag = 0x00;
                 sysMode = 0x20;
                 #endif
                 break;
@@ -514,16 +531,19 @@ int main(void)
         {            
             case LED_ALWAYS_OFF:
                 LED_OFF();
+                HAL_GPIO_WritePin(EXT_LED_GPIO, EXT_LED_PIN, GPIO_PIN_RESET);
                 break;
             
             case LED_ALWAYS_ON:
                 LED_ON();
+                HAL_GPIO_WritePin(EXT_LED_GPIO, EXT_LED_PIN, GPIO_PIN_SET);
                 break;
             
             case LED_TWINKLE_LONG:
                 if(HAL_GetTick()-ledTick>1000)
                 {
                     LED_TOG();
+                    HAL_GPIO_TogglePin(EXT_LED_GPIO, EXT_LED_PIN);
                     ledTick = HAL_GetTick();
                 }
                 break;
@@ -532,6 +552,7 @@ int main(void)
                 if(HAL_GetTick()-ledTick>100)
                 {
                     LED_TOG();
+                    HAL_GPIO_TogglePin(EXT_LED_GPIO, EXT_LED_PIN);
                     ledTick = HAL_GetTick();
                 }
                 break;
@@ -540,12 +561,14 @@ int main(void)
                 if(HAL_GetTick()-ledTick>500)
                 {
                     LED_TOG();
+                    HAL_GPIO_TogglePin(EXT_LED_GPIO, EXT_LED_PIN);
                     ledTick = HAL_GetTick();
                 }
                 break;
             
             case LED_FLASH_DIM:
                 LED_OFF();
+                HAL_GPIO_WritePin(EXT_LED_GPIO, EXT_LED_PIN, GPIO_PIN_RESET);
                 ledTick = HAL_GetTick();
                 ledMode = LED_FLASH_DIM_WAIT;
                 break;
@@ -561,6 +584,30 @@ int main(void)
                 ledMode = LED_ALWAYS_OFF;
                 break;
         }
+        
+        // LED for camera
+        #ifdef FUNC_CAM
+        for(int i = 0; i < CAMNUM; i++)
+        {
+            if(camera[i].led)
+            {
+                if(HAL_GetTick()-camera[i].led_tick > LED_DURATION)
+                {
+                    camera[i].led = 0;
+                }
+                else
+                {
+                    HAL_GPIO_WritePin(camera[i].led_gpio, camera[i].led_pin, GPIO_PIN_RESET);
+                }  
+            }
+            else
+            {
+                HAL_GPIO_WritePin(camera[i].led_gpio, camera[i].led_pin, GPIO_PIN_SET);
+            }
+        }
+        #endif /* FUNC_CAM */
+        
+        
 
         /* ========== KEY ========== */
         if(keyState != HAL_GPIO_ReadPin(KEY_GPIO,KEY_PIN))

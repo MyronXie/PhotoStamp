@@ -3,7 +3,7 @@
   * @file           : util.h
   * @brief          : Driver for other devices
   ******************************************************************************
-  * @version        : 2.0-beta(200605)
+  * @version        : 2.0-beta3(201009)
   * @author         : Myron Xie
   ******************************************************************************
   */
@@ -29,11 +29,14 @@
 #define     TRIG_GUARD_TIME     500     // (ms) minimum time between two triggers
 
 /* CAMERA */
-#define     CAM_START_TIME_A    5000    // (ms) time between system startup and activate all cameras
-#define     CAM_START_TIME_B    3000    // (ms) time between activate all cameras and re-activate 1st camera
+#define     CAM_START_TIME_A    8000    // (ms) time between system startup and activate all cameras
+#define     CAM_START_TIME_B    5000    // (ms) time between activate all cameras and re-activate 1st camera
 #define     CAM_START_TIME_C    1500    // (ms) time between re-activate each camera
 #define     CAM_TRIGGED_TIME    100     // (ms) time for low-level signal to activate camera
 #define     CAM_TIMEOUT         1000    // (ms) Timeout for camera // due to feedback issue, this value ignored (1500 original)
+
+/* LED */
+#define     LED_DURATION        300     // (ms) time for LED indicate system has received feedback from camera, should less than interval between triggers
 /* ========== ========== ========== ========== ========== */
 
 /* System */
@@ -50,9 +53,9 @@
 #define     ISTRIGGED(x)        (((x)>TRIG_PWM_MIN-TRIG_MARGIN)&&((x)<TRIG_PWM_MAX+TRIG_MARGIN))
 
 /* LED */
-#define LED_ON()    HAL_GPIO_WritePin(LED_GPIO, LED_PIN, GPIO_PIN_RESET)
-#define LED_OFF()   HAL_GPIO_WritePin(LED_GPIO, LED_PIN, GPIO_PIN_SET)
-#define LED_TOG()   HAL_GPIO_TogglePin(LED_GPIO, LED_PIN)
+#define LED_ON()    HAL_GPIO_WritePin(BOARD_LED_GPIO, BOARD_LED_PIN, GPIO_PIN_RESET)
+#define LED_OFF()   HAL_GPIO_WritePin(BOARD_LED_GPIO, BOARD_LED_PIN, GPIO_PIN_SET)
+#define LED_TOG()   HAL_GPIO_TogglePin(BOARD_LED_GPIO, BOARD_LED_PIN)
 
 #define LED_ALWAYS_OFF      0x00
 #define LED_ALWAYS_ON       0x10
@@ -65,12 +68,16 @@
 /* Camera */
 typedef struct
 {
-    uint8_t         status;
-    GPIO_TypeDef*   output_base;
+    GPIO_TypeDef*   output_gpio;
     uint16_t        output_pin;
-    GPIO_TypeDef*   input_base;
+    GPIO_TypeDef*   input_gpio;
     uint16_t        input_pin;
-    uint8_t         fb;         // feedback
+    GPIO_TypeDef*   led_gpio;
+    uint16_t        led_pin;
+    uint8_t         status;
+    uint8_t         fb;         // feedback, disable soon
+    uint8_t         led;
+    uint64_t        led_tick;
 }CamType;
 
 #define     CAM_OFF     0x00        // Camera running status
